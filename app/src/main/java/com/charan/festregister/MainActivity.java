@@ -1,14 +1,12 @@
 package com.charan.festregister;
 
 import android.annotation.TargetApi;
-import android.app.VoiceInteractor;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,44 +16,35 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.squareup.okhttp.FormEncodingBuilder;
+import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
-import okhttp3.FormBody;
-/*import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;*/
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.util.*;
 
 import java.net.URLEncoder;
 
-import okhttp3.FormBody;
-import okhttp3.RequestBody;
 
 public class MainActivity extends AppCompatActivity {
     Button button,reset,upload_button;
     String name,branch,sem,event,phone,college,message,code;
     EditText namefield,phonefield,collegefield;
     TextView tester;
-    final String myTag = "DocsUpload";
+
+    public static final String URL="https://docs.google.com/forms/d/1fy3QFvgLPVFHhC5FwFSHmyMtFgZNPbKyjoMW2UF9hIw/formResponse";
+    public static final MediaType FORM_DATA_TYPE
+            = MediaType.parse("application/x-www-form-urlencoded; charset=utf-8");
+
+    public static final String NAME_KEY="entry_184103295";
+    public static final String BRANCH_KEY="entry_48649782";
+    public static final String SEM_KEY="entry_1945317796";
+    public static final String EVENT_KEY="entry_926540497";
+    public static final String PHONE_KEY="entry_1535623085";
+    public static final String COLLEGE_KEY="entry_717811992";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -218,11 +207,11 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-    public class PostData extends AsyncTask<Void,Void,Void>{
+    public class PostData extends AsyncTask<Void, Void, Boolean> {
         HttpURLConnection connection ;
         @TargetApi(Build.VERSION_CODES.KITKAT)
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Boolean doInBackground(Void... params) {
             String posting_name = name;
             String posting_branch = branch;
             String posting_sem = sem;
@@ -230,35 +219,48 @@ public class MainActivity extends AppCompatActivity {
             String posting_phone= phone;
             String posting_college= college;
             String posting_code= code;
-            String fullUrl = "https://docs.google.com/forms/d/1fy3QFvgLPVFHhC5FwFSHmyMtFgZNPbKyjoMW2UF9hIw/formResponse";
+            Boolean result = true;
+            String postBody="";
+
             try {
-                URL url = new URL(fullUrl);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.setDoOutput(true);
-                connection.setRequestMethod("POST");
-
-                List<NameValuePair> data = new ArrayList<NameValuePair>();
-                data.add(new BasicNameValuePair("entry_184103295", posting_name));
-//                data.add(new BasicNameValuePair("secondParam", paramValue2));
-//                data.add(new BasicNameValuePair("thirdParam", paramValue3));
-
-                OutputStream os = connection.getOutputStream();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                //all values must be URL encoded to make sure that special characters like & | ",etc.
+                //do not cause problems
+                postBody = NAME_KEY+"=" + URLEncoder.encode(posting_name,"UTF-8") +
+                        "&" + BRANCH_KEY + "=" + URLEncoder.encode(posting_branch,"UTF-8") +
+                        "&" + SEM_KEY + "=" + URLEncoder.encode(posting_sem,"UTF-8") +
+                        "&" + EVENT_KEY + "=" + URLEncoder.encode(posting_event,"UTF-8") +
+                        "&" + PHONE_KEY + "=" + URLEncoder.encode(posting_phone,"UTF-8") +
+                        "&" + COLLEGE_KEY + "=" + URLEncoder.encode(posting_college,"UTF-8");
+            } catch (Exception ex) {
+                result=false;
             }
 
+            try {
+                HttpRequest httpRequest = new HttpRequest();
+                httpRequest.sendPost(URL, postBody);
+            }catch (Exception exception){
+                result = false;
+            }
 
-
-
-            String data = null;
-
-            return null;
+//            try{
+//                //Create OkHttpClient for sending request
+//                OkHttpClient client = new OkHttpClient();
+//                //Create the request body with the help of Media Type
+//                RequestBody body = RequestBody.create(FORM_DATA_TYPE, postBody);
+//                Request request = new Request.Builder()
+//                        .url(URL)
+//                        .post(body)
+//                        .build();
+//                //Send the request
+//                Response response = client.newCall(request).execute();
+//            }catch (IOException exception){
+//                result=false;
+//            }
+            return result;
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
+        protected void onPostExecute(Boolean aVoid) {
             super.onPostExecute(aVoid);
             Toast.makeText(getApplicationContext(),"Upload Complete !",Toast.LENGTH_LONG).show();
         }
