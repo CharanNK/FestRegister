@@ -16,7 +16,8 @@
         android:id="@+id/button"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="58dp" />
+        android:layout_marginBottom="58dp"
+        style="@style/ButtonStyle" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -145,10 +146,11 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:id="@+id/tester"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:id="@+id/branch_field"
         android:layout_below="@+id/collegefield"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:textColor="#FFFFFF" />
 
     <Button
         android:layout_width="wrap_content"
@@ -156,15 +158,48 @@
         android:text="RESET"
         android:id="@+id/reset_button"
         android:layout_alignTop="@+id/button"
-        android:layout_alignEnd="@+id/collegefield" />
+        android:layout_alignEnd="@+id/collegefield"
+        style="@style/ButtonStyle" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="UPLOAD"
         android:id="@+id/upload_button"
+        android:visibility="visible"
         android:layout_alignTop="@+id/button"
-        android:layout_alignParentStart="true"
-        android:visibility="visible" />
+        android:layout_toEndOf="@+id/branch_field"
+        style="@style/ButtonStyle" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Small Text"
+        android:id="@+id/sem_field"
+        android:layout_below="@+id/collegefield"
+        android:layout_alignParentEnd="true"
+        android:textColor="#FFFFFF" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Small Text"
+        android:id="@+id/event_field"
+        android:layout_below="@+id/collegefield"
+        android:layout_toStartOf="@+id/reset_button"
+        android:textColor="#FFFFFF" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Small Text"
+        android:id="@+id/code_field"
+        android:layout_below="@+id/collegefield"
+        android:layout_alignEnd="@+id/button"
+        android:layout_marginRight="60dp"
+        android:textColor="#FF0000" />
 
 </RelativeLayout>

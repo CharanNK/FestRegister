@@ -6,7 +6,11 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.SmsManager;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -23,6 +27,7 @@ import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 
 import java.net.URLEncoder;
@@ -30,20 +35,21 @@ import java.net.URLEncoder;
 
 public class MainActivity extends AppCompatActivity {
     Button button,reset,upload_button;
-    String name,branch,sem,event,phone,college,message,code;
+    String name,branch="",sem="",event="",phone,college,message,code,time,coordno,roomno;
     EditText namefield,phonefield,collegefield;
-    TextView tester;
+    TextView branchfield,semfield,eventfield,codefield;
 
-    public static final String URL="https://docs.google.com/forms/d/1fy3QFvgLPVFHhC5FwFSHmyMtFgZNPbKyjoMW2UF9hIw/formResponse";
+    public static final String URL= "https://docs.google.com/forms/d/1jwjhqapa6ZJG-fTDAfhemO2NPNxoAg7m0BtcjQtuqOs/formResponse";
     public static final MediaType FORM_DATA_TYPE
             = MediaType.parse("application/x-www-form-urlencoded; charset=utf-8");
 
-    public static final String NAME_KEY="entry_184103295";
-    public static final String BRANCH_KEY="entry_48649782";
-    public static final String SEM_KEY="entry_1945317796";
-    public static final String EVENT_KEY="entry_926540497";
-    public static final String PHONE_KEY="entry_1535623085";
-    public static final String COLLEGE_KEY="entry_717811992";
+    public static final String NAME_KEY="entry_2014583043";
+    public static final String BRANCH_KEY="entry_1543322964";
+    public static final String SEM_KEY="entry_1355186410";
+    public static final String EVENT_KEY="entry_941354977";
+    public static final String PHONE_KEY="entry_1966262782";
+    public static final String COLLEGE_KEY="entry_907711248";
+    public static final String CODE_KEY="entry_144009659";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +89,13 @@ public class MainActivity extends AppCompatActivity {
         phonefield = (EditText) findViewById(R.id.phonefield);
         collegefield = (EditText) findViewById(R.id.collegefield);
 
-        tester = (TextView) findViewById(R.id.tester);
+        branchfield = (TextView) findViewById(R.id.branch_field);
+        semfield = (TextView) findViewById(R.id.sem_field);
+        eventfield = (TextView) findViewById(R.id.event_field);
+        codefield = (TextView) findViewById(R.id.code_field);
+
+        code = new RandomString(6).nextString();
+        codefield.setText(code);
 
         event_spinner.setOnItemSelectedListener(new OnEventSpinnerItemSelected());
 
@@ -94,9 +106,37 @@ public class MainActivity extends AppCompatActivity {
                 phone = phonefield.getText().toString();
                 college = collegefield.getText().toString();
 
-                code = new RandomString(6).nextString();
+                //Make sure all the fields are filled with values
+                if(TextUtils.isEmpty(namefield.getText().toString()) ||
+                        TextUtils.isEmpty(phonefield.getText().toString()) ||
+                        TextUtils.isEmpty(collegefield.getText().toString())||
+                        TextUtils.isEmpty(branch)||
+                        TextUtils.isEmpty(sem)||
+                        TextUtils.isEmpty(event))
+                {
+                    Toast.makeText(getApplicationContext(),"All fields are mandatory.",Toast.LENGTH_LONG).show();
+                    return;
+                }
 
-                message = "NAME-"+name+" EVENT-"+event+" CODE-"+code+" TIME-";
+                message = "Name-"+name+",Event-"+event+",Code-"+code+",Time-"+time+",Room-"+roomno+",Co-ord :"+coordno;
+
+                //Call default SMS application
+ /*               SmsManager sms = SmsManager.getDefault();
+                sms.sendTextMessage(phone,null,message,null,null);
+                Toast.makeText(getApplicationContext(),"Message Sent!",Toast.LENGTH_LONG).show();
+
+                //Disable Button
+                button.setEnabled(false);
+
+                final Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        button.setEnabled(true);
+                    }
+                },5000); */
+
+                Toast.makeText(getApplicationContext(),"Message Sent!",Toast.LENGTH_LONG).show();
 
                 //Call default SMS application
                 Uri sms_uri = Uri.parse("smsto:+91"+phone);
@@ -109,20 +149,34 @@ public class MainActivity extends AppCompatActivity {
         reset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                name = namefield.getText().toString();
-                phone = phonefield.getText().toString();
-                college = collegefield.getText().toString();
-
                 Intent intent = new Intent(getApplicationContext(),MainActivity.class);
                 startActivity(intent);
-              //  new PostData().execute();
             }
         });
 
         upload_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new PostData().execute();
+                if(TextUtils.isEmpty(namefield.getText().toString()) ||
+                        TextUtils.isEmpty(phonefield.getText().toString()) ||
+                        TextUtils.isEmpty(collegefield.getText().toString())||
+                        TextUtils.isEmpty(branch)||
+                        TextUtils.isEmpty(sem)||
+                        TextUtils.isEmpty(event))
+                {
+                    Toast.makeText(getApplicationContext(),"All fields are mandatory.",Toast.LENGTH_LONG).show();
+                    return;
+                }
+                PostDataTask postDataTask = new PostDataTask();
+
+                //execute asynctask
+                postDataTask.execute(URL,namefield.getText().toString(),
+                        branchfield.getText().toString(),
+                        semfield.getText().toString(),
+                        eventfield.getText().toString()
+                        ,phonefield.getText().toString(),
+                        collegefield.getText().toString(),
+                        codefield.getText().toString());
             }
         });
     }
@@ -132,25 +186,31 @@ public class MainActivity extends AppCompatActivity {
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             switch (position){
                 case 1 : branch = "CIVIL";
+                    branchfield.setText(branch);
                     break;
                 case 2 : branch = "CSE";
+                    branchfield.setText(branch);
                     break;
                 case 3 : branch = "ECE";
+                    branchfield.setText(branch);
                     break;
                 case 4 : branch = "EEE";
+                    branchfield.setText(branch);
                     break;
                 case 5 : branch = "ISE";
+                    branchfield.setText(branch);
                     break;
                 case 6 : branch = "IT";
+                    branchfield.setText(branch);
                     break;
                 case 7 : branch = "MECH";
+                    branchfield.setText(branch);
                     break;
             }
         }
 
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
-
         }
     }
 
@@ -160,12 +220,16 @@ public class MainActivity extends AppCompatActivity {
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             switch (position){
                 case 1 : sem = "2";
+                    semfield.setText(sem);
                     break;
                 case 2 : sem = "4";
+                    semfield.setText(sem);
                     break;
                 case 3 : sem = "6";
+                    semfield.setText(sem);
                     break;
                 case 4 : sem = "8";
+                    semfield.setText(sem);
                     break;
             }
         }
@@ -183,21 +247,45 @@ public class MainActivity extends AppCompatActivity {
             switch (position) {
                 case 1:
                     event = "COUNTER STRIKE";
+                    time = "All Day";
+                    roomno = "LAB2";
+                    coordno = "Gagan-8553438893";
+                    eventfield.setText(event);
                     break;
                 case 2:
                     event = "MINI MILITIA";
+                    time = "1PM";
+                    roomno="103";
+                    coordno="Gagan-8553438893";
+                    eventfield.setText(event);
                     break;
                 case 3:
                     event = "MAZE RUN";
+                    time= "9:30";
+                    roomno = "Hitech lab";
+                    coordno = "Avinash-9880430068";
+                    eventfield.setText(event);
                     break;
                 case 4:
                     event = "MIND IT";
+                    time = "12:00";
+                    roomno="102";
+                    coordno = "Ashwin-8892664963";
+                    eventfield.setText(event);
                     break;
                 case 5:
                     event = "TECHQUIZIT";
+                    time = "9AM";
+                    roomno="104";
+                    coordno = "Aditya-8884541594";
+                    eventfield.setText(event);
                     break;
                 case 6:
                     event = "REVERSE CODING";
+                    time = "2PM";
+                    roomno="LAB3";
+                    coordno = "Mahesh-9742053664";
+                    eventfield.setText(event);
                     break;
             }
         }
@@ -207,63 +295,69 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-    public class PostData extends AsyncTask<Void, Void, Boolean> {
-        HttpURLConnection connection ;
-        @TargetApi(Build.VERSION_CODES.KITKAT)
+    private class PostDataTask extends AsyncTask<String, Void, Boolean> {
+
         @Override
-        protected Boolean doInBackground(Void... params) {
-            String posting_name = name;
-            String posting_branch = branch;
-            String posting_sem = sem;
-            String posting_event = event;
-            String posting_phone= phone;
-            String posting_college= college;
-            String posting_code= code;
+        protected Boolean doInBackground(String... uploadData) {
             Boolean result = true;
+            String url = uploadData[0];
+            String name = uploadData[1];
+            String branch = uploadData[2];
+            String sem = uploadData[3];
+            String event = uploadData[4];
+            String phone = uploadData[5];
+            String college = uploadData[6];
+            String code = uploadData[7];
             String postBody="";
 
             try {
                 //all values must be URL encoded to make sure that special characters like & | ",etc.
                 //do not cause problems
-                postBody = NAME_KEY+"=" + URLEncoder.encode(posting_name,"UTF-8") +
-                        "&" + BRANCH_KEY + "=" + URLEncoder.encode(posting_branch,"UTF-8") +
-                        "&" + SEM_KEY + "=" + URLEncoder.encode(posting_sem,"UTF-8") +
-                        "&" + EVENT_KEY + "=" + URLEncoder.encode(posting_event,"UTF-8") +
-                        "&" + PHONE_KEY + "=" + URLEncoder.encode(posting_phone,"UTF-8") +
-                        "&" + COLLEGE_KEY + "=" + URLEncoder.encode(posting_college,"UTF-8");
-            } catch (Exception ex) {
+                postBody = NAME_KEY+"=" + URLEncoder.encode(name,"UTF-8") +
+                        "&" +BRANCH_KEY + "=" + URLEncoder.encode(branch,"UTF-8")+
+                        "&" + SEM_KEY + "=" + URLEncoder.encode(sem,"UTF-8")+
+                        "&" + EVENT_KEY + "=" + URLEncoder.encode(event,"UTF-8")+
+                        "&" + PHONE_KEY + "=" + URLEncoder.encode(phone,"UTF-8")+
+                        "&" + COLLEGE_KEY + "=" + URLEncoder.encode(college,"UTF-8") +
+                        "&" + CODE_KEY + "=" + URLEncoder.encode(code,"UTF-8");
+            } catch (UnsupportedEncodingException ex) {
                 result=false;
-            }
-
-            try {
-                HttpRequest httpRequest = new HttpRequest();
-                httpRequest.sendPost(URL, postBody);
-            }catch (Exception exception){
+            } catch (NullPointerException e){
                 result = false;
             }
 
-//            try{
-//                //Create OkHttpClient for sending request
-//                OkHttpClient client = new OkHttpClient();
-//                //Create the request body with the help of Media Type
-//                RequestBody body = RequestBody.create(FORM_DATA_TYPE, postBody);
-//                Request request = new Request.Builder()
-//                        .url(URL)
-//                        .post(body)
-//                        .build();
-//                //Send the request
-//                Response response = client.newCall(request).execute();
-//            }catch (IOException exception){
-//                result=false;
-//            }
+            /*
+            //If you want to use HttpRequest class from http://stackoverflow.com/a/2253280/1261816
+            try {
+			HttpRequest httpRequest = new HttpRequest();
+			httpRequest.sendPost(url, postBody);
+		}catch (Exception exception){
+			result = false;
+		}
+            */
+
+            try{
+                //Create OkHttpClient for sending request
+                OkHttpClient client = new OkHttpClient();
+                //Create the request body with the help of Media Type
+                RequestBody body = RequestBody.create(FORM_DATA_TYPE, postBody);
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(body)
+                        .build();
+                //Send the request
+                Response response = client.newCall(request).execute();
+            }catch (IOException exception){
+                result=false;
+            }
             return result;
         }
 
         @Override
-        protected void onPostExecute(Boolean aVoid) {
-            super.onPostExecute(aVoid);
-            Toast.makeText(getApplicationContext(),"Upload Complete !",Toast.LENGTH_LONG).show();
+        protected void onPostExecute(Boolean result){
+            //Print Success or failure message accordingly
+            Toast.makeText(getApplicationContext(),result?"Uploaded to Drive!":"There was some error in sending message. Please try again after some time.",Toast.LENGTH_LONG).show();
         }
-    }
 
+    }
 }
